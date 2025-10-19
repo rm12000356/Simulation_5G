@@ -37,7 +37,7 @@ class AWGN:
             tx = self.modulation_QPSK(self.myPC.u)
             rx = tx + self.QPSK_noise(len(tx))
             self.myPC.likelihoods = np.array(self.get_qpsk_llrs(rx), dtype=np.float64)
-            self.myPC.likelihoods = np.clip(self.myPC.likelihoods, -20.0, 20.0)
+            self.myPC.likelihoods = np.clip(self.myPC.likelihoods, -10.0, 10.0)
         # change shortened/punctured bit LLRs
         if self.myPC.punct_flag:
             if self.myPC.punct_type == 'shorten':
@@ -96,6 +96,9 @@ class AWGN:
         llrs = np.zeros(2 * num_syms, dtype=np.float64)
         llrs[0::2] = llr_factor * np.real(y)  # b0 (MSB, Re)
         llrs[1::2] = llr_factor * np.imag(y)  # b1 (LSB, Im)
+        threshold = 10.0  
+        hard_conf = 20.0  
+        llrs = np.where(np.abs(llrs) > threshold, np.sign(llrs) * hard_conf, llrs)
         return llrs
 
     def modulation(self, x):
@@ -188,3 +191,4 @@ class AWGN:
         Trigger showing the gaussian noise. Only works if ``plot_noise`` is True.
         """
         plt.show()
+
