@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class AWGN:
-    def __init__(self, myPC, Eb_No, plot_noise = False):
+    def __init__(self, myPC, Eb_No, plot_noise = False, mode='BPSK'):
         """
         Parameters
         ----------
@@ -29,11 +29,15 @@ class AWGN:
         self.Es = myPC.get_normalised_SNR(Eb_No)
         self.No = 1
         self.plot_noise = plot_noise
-
-        tx = self.modulation(self.myPC.u)
-        rx = tx + self.noise(self.myPC.N)
-        self.myPC.likelihoods = np.array(self.get_likelihoods(rx), dtype=np.float64)
-
+        if mode=='BPSK':
+            tx = self.modulation(self.myPC.u)
+            rx = tx + self.noise(self.myPC.N)
+            self.myPC.likelihoods = np.array(self.get_likelihoods(rx), dtype=np.float64)
+        elif mode=='QPSK':
+            tx = self.modulation_QPSK(self.myPC.u)
+            rx = tx + self.QPSK_noise(len(tx))
+            self.myPC.likelihoods = np.array(self.get_qpsk_llrs(rx), dtype=np.float64)
+            self.myPC.likelihoods = np.clip(self.myPC.likelihoods, -20.0, 20.0)
         # change shortened/punctured bit LLRs
         if self.myPC.punct_flag:
             if self.myPC.punct_type == 'shorten':
@@ -66,16 +70,33 @@ class AWGN:
 
         Parameters
         ----------
-        y: ndarray<float>
+        y: ndarray[float]
             an ensemble of received signals
 
         Returns
         ----------
-        ndarray<float>
+        ndarray[float]
             log-likelihood ratios for the input signals ``y``
 
         """
         return [self.LLR(y[i]) for i in range(len(y))]
+
+    def get_qpsk_llrs(self, y):
+        """
+        Compute LLRs for Gray-coded QPSK with constellation (1+1j, 1-1j, -1+1j, -1-1j)/sqrt(2), Es=1.
+        LLR_b0 (MSB, Re branch): 2 * Re(y) / (N0/2) = 4 * Re(y) / N0
+        LLR_b1 (LSB, Im branch): 4 * Im(y) / N0
+        Positive LLR favors bit=0.
+        y: complex array of shape (N/2,)
+        Returns: LLRs of shape (N,) [LLR_b0_sym0, LLR_b1_sym0, ...]
+        """
+        N0 = self.No  # Normalized N0=1, but general
+        llr_factor = 2*np.sqrt(self.Es ) / self.No
+        num_syms = len(y)
+        llrs = np.zeros(2 * num_syms, dtype=np.float64)
+        llrs[0::2] = llr_factor * np.real(y)  # b0 (MSB, Re)
+        llrs[1::2] = llr_factor * np.imag(y)  # b1 (LSB, Im)
+        return llrs
 
     def modulation(self, x):
         """
@@ -84,17 +105,43 @@ class AWGN:
 
         Parameters
         ----------
-        x: ndarray<int>
+        x: ndarray[int]
             an ensemble of information to send
 
         Returns
         ----------
-        ndarray<float>
+        ndarray[float]
             modulated signal with the information from ``x``
 
         """
 
         return 2 * (x - 0.5) * np.sqrt(self.Es)
+
+    def modulation_QPSK(self, u):
+        """
+        QPSK modulation for u (bits, length N).
+        Gray mapping: 00 -> (1+1j)/sqrt(2), 01 -> (1-1j)/sqrt(2), 11 -> (-1-1j)/sqrt(2), 10 -> (-1+1j)/sqrt(2)
+        Es normalized to 1.
+        Returns: complex array shape (N/2,)
+        """
+        num_syms = len(u) // 2
+        symbols = np.zeros(num_syms, dtype=np.complex128)
+        for i in range(num_syms):
+            b0 = u[2*i]  # MSB
+            b1 = u[2*i + 1]  # LSB
+            # Gray: 00 (0): (1+1j), 01 (1): (1-1j), 11 (3): (-1-1j), 10 (2): (-1+1j)
+            if b0 == 0 and b1 == 0:
+                sym = 1 + 1j
+            elif b0 == 0 and b1 == 1:
+                sym = 1 - 1j
+            elif b0 == 1 and b1 == 1:
+                sym = -1 - 1j
+            elif b0 == 1 and b1 == 0:
+                sym = -1 + 1j
+            else:
+                sym = 0  # Error
+            symbols[i] = sym / np.sqrt(2)  # Es=1
+        return symbols
 
     def noise(self, N):
         """
@@ -108,7 +155,7 @@ class AWGN:
 
         Returns
         ----------
-        ndarray<float>
+        ndarray[float]
             white gaussian noise vector
 
         """
@@ -120,14 +167,21 @@ class AWGN:
         if self.plot_noise:
             num_bins = 1000
             count, bins, ignored = plt.hist(s, num_bins, density=True)
-            plt.plot(bins, 1 / (np.sqrt(np.pi * self.No)) * np.exp(- (bins) ** 2 / self.No),
-                        linewidth=2, color='r')
+            plt.plot(bins, 1 / (np.sqrt(np.pi * self.No)) * np.exp(- (bins) ** 2 / self.No), linewidth='r')
             plt.title('AWGN')
-            plt.xlabel('Noise, n')
+            linewidth=('Noise, n')
             plt.ylabel('Density')
             plt.legend(['Theoretical', 'RNG'])
             plt.draw()
         return s
+
+    def QPSK_noise(self, N):
+        """
+        Generate complex Gaussian noise for QPSK, variance N0/2 per dimension.
+        """
+        real_noise = np.random.randn(N) * np.sqrt(self.No / 2)
+        imag_noise = np.random.randn(N) * np.sqrt(self.No / 2)
+        return real_noise + 1j * imag_noise
 
     def show_noise(self):
         """
