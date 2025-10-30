@@ -2,7 +2,7 @@ import sys
 sys.path.append('./polarcodes')  # Add local folder
 from polarcodes import PolarCode, Construct, Encode, Decode,AWGN
 from ASCII import encode_to_binary, decode_from_binary
-from utils import attach_crc, check_crc_and_strip  # Your CRC
+from CRC import attach_crc, check_crc_and_strip  # Your CRC
 import numpy as np
 
 
@@ -60,3 +60,4 @@ if crc_passed:
 else:
     print("CRC failed—try higher SNR (10.0) or flat channel.")
     
+
