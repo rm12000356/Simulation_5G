@@ -42,16 +42,11 @@ print(f"[DEBUG] Bit match rate: {np.mean(decoded_full == bit_stream_crc):.2%}")
 crc_passed, decoded_info_bits, crc_len = check_crc_and_strip(decoded_full)
 
 
-if crc_passed:
-    binary_strings_dec = []
-    for i in range(0, len(decoded_info_bits), 8):
-        chunk = decoded_info_bits[i:i+8]
-        binary_str = ''.join(str(bit) for bit in chunk)
-        binary_strings_dec.append(binary_str)
-    
-    decoded_data = decode_from_binary(binary_strings_dec)
+if crc_passed:    
+    decoded_data = decode_from_binary(decoded_info_bits)
     print(f"Decoded string: '{decoded_data}'")
     print(f"Matches original: {decoded_data == data}")
 else:
     print("CRC failed—try higher SNR (10.0) or flat channel.")
     
+
