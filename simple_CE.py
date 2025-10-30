@@ -1,6 +1,6 @@
 import numpy as np
-#this is a push trial
-x = 49
+
+
 # Parameters
 n_pilots = 16
 pilot = 1 + 0j  # Simple known pilot symbol (no scrambling needed)
