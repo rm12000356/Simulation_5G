@@ -141,5 +141,3 @@ def plot_constellation(symbols,bits_per_symbol, title="Constellation Diagram", a
             plt.text(round(s.real, 3) + 0.05, round(s.imag,3) + 0.05, bit_string, fontsize=8, color='red')
 
     plt.show()
-
-

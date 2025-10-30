@@ -23,19 +23,18 @@ noise = (np.random.randn() + 1j*np.random.randn()) * sigma / np.sqrt(2)
 
 # Simulate n pilots
 y = np.zeros(len(data_with_pilots), dtype=complex)  # Received vector
-index_of_total_data = len(data_with_pilots)
-ind_temp = 0
-for k in range(len(data_with_pilots)):
-    print(pilot_p[k])
-    if(ind_temp == pilot_p[k]):
-        y[k] = true_H * pilot_symbol + noise
-    ind_temp += 1
-y = np.zeros(len(data_with_pilots), dtype=complex)
+
+# Place pilot responses at the pilot indices returned by insert_pilots_after_blocks
+sigma = 10**(-SNR_dB/20)
+for idx in pilot_p:
+    # generate noise per pilot
+    noise = (np.random.randn() + 1j*np.random.randn()) * sigma / np.sqrt(2)
+    y[int(idx)] = true_H * pilot_symbol + noise
 
 
 
 # LS estimation: Average over pilots
-H_est = np.mean(y / pilot_symbol)  # Or explicitly: (1/n) * sum(y_k / s)
+H_est = np.mean(y[pilot_p] / pilot_symbol)  # Average only over pilot positions
 print(f"True H: {true_H}")
 print(f"Est H (n={len(pilot_p)}): {H_est}")
 print(f"Error magnitude: {np.abs(true_H - H_est)}")
