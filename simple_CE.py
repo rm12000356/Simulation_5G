@@ -48,5 +48,6 @@ def insert_pilots_after_blocks(data, pilot_symbol, block_size):
             pilot_indices[pilot_idx] = frame_idx
             tx_frame[frame_idx] = pilot_symbol
             frame_idx += 1
+            pilot_idx += 1
     
     return tx_frame , pilot_indices

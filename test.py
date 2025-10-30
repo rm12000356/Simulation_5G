@@ -1,4 +1,4 @@
-from modulation import modulation_MQAM, plot_constellation, demodulate_MQAM,generate_all_points_in_constellation
+from M_QAM_modulation import modulation_MQAM, plot_constellation, demodulate_MQAM,generate_all_points_in_constellation
 from ASCII import encode_to_binary, decode_from_binary
 import numpy as np
 from simple_CE import insert_pilots_after_blocks
@@ -9,14 +9,12 @@ data = "hey i am here heree come ppaababe qwerr kiot mnklzzxa alks jfose aaaaa r
 binary_strings = encode_to_binary(data)
 bit_stream = np.array([int(b) for bs in binary_strings for b in bs])
 
-
-
 mod_data = modulation_MQAM(bit_stream,M)
 
 #here we need to add the pilot symbols needed to estimate the channel 
 data_with_pilots, pilot_p = insert_pilots_after_blocks(mod_data, pilot_symbol, block_size=8)
-
- # True channel (for simulation)
+print(pilot_p)
+# True channel (for simulation)
 SNR_dB = 20  # Noise level
 sigma = 10**(-SNR_dB/20)  # Noise std dev (for unit power signal)
 noise = (np.random.randn() + 1j*np.random.randn()) * sigma / np.sqrt(2)
@@ -26,13 +24,10 @@ y = np.zeros(len(data_with_pilots), dtype=complex)  # Received vector
 index_of_total_data = len(data_with_pilots)
 ind_temp = 0
 for k in range(len(data_with_pilots)):
-    print(pilot_p[k])
-    if(ind_temp == pilot_p[k]):
+    if(k == pilot_p[ind_temp]):
+        print(pilot_p[ind_temp])
         y[k] = true_H * pilot_symbol + noise
-    ind_temp += 1
-y = np.zeros(len(data_with_pilots), dtype=complex)
-
-
+        ind_temp += 1
 
 # LS estimation: Average over pilots
 H_est = np.mean(y / pilot_symbol)  # Or explicitly: (1/n) * sum(y_k / s)
@@ -45,9 +40,6 @@ print(f"Error magnitude: {np.abs(true_H - H_est)}")
 #plot_constellation(mod_data, 4,title=str(M)+"-QAM Constellation")
 
 data_ASCII = demodulate_MQAM(mod_data, M)
-
-
-
 deascii_data = decode_from_binary(data_ASCII)
 
 if data == deascii_data:
