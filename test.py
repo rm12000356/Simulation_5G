@@ -9,6 +9,8 @@ data = "hey i am here heree come ppaababe qwerr kiot mnklzzxa alks jfose aaaaa r
 binary_strings = encode_to_binary(data)
 bit_stream = np.array([int(b) for bs in binary_strings for b in bs])
 
+
+
 mod_data = modulation_MQAM(bit_stream,M)
 
 #here we need to add the pilot symbols needed to estimate the channel 
