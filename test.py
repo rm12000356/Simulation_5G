@@ -14,7 +14,7 @@ bit_stream = np.array([int(b) for bs in binary_strings for b in bs])
 mod_data = modulation_MQAM(bit_stream,M)
 
 #here we need to add the pilot symbols needed to estimate the channel 
-data_with_pilots, pilot_p = insert_pilots_after_blocks(mod_data, pilot_symbol, block_size=4)
+data_with_pilots, pilot_p = insert_pilots_after_blocks(mod_data, pilot_symbol, block_size=2)
 
 # True channel (for simulation)
 SNR_dB = 20  # Noise level
