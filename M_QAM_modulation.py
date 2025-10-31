@@ -118,6 +118,7 @@ def plot_constellation(symbols,bits_per_symbol, title="Constellation Diagram", a
     - symbols: 1D array of complex numbers
     - title: plot title
     """
+    plt.ion() # interactive mode on so it does not block the following code
     symbols = np.asarray(symbols)  # ensure numpy array
     plt.figure(figsize=(6,6))
     
@@ -135,10 +136,14 @@ def plot_constellation(symbols,bits_per_symbol, title="Constellation Diagram", a
 
     # Annotate points with index (optional)
     if annotate:
+        if bits_per_symbol > 6:
+            size = 3
+        else: 
+            size = 8
         for i, s in enumerate(symbols):
             # Convert index i to bit string of length bits_per_symbol
             bit_string = format(i % (2**bits_per_symbol), f'0{bits_per_symbol}b')
-            plt.text(round(s.real, 3) + 0.05, round(s.imag,3) + 0.05, bit_string, fontsize=8, color='red')
+            plt.text(round(s.real, 3)-0.05 , round(s.imag,3) + 0.05, bit_string, fontsize = size , color='red')
 
     plt.show()
 
